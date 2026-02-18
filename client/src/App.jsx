@@ -109,8 +109,6 @@ export default function App() {
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
-        let cancelled = false;
-
         async function init() {
             try {
                 // Try Discord auth
@@ -118,7 +116,7 @@ export default function App() {
                 let user = null;
                 try {
                     user = await setupDiscord();
-                    if (!cancelled) setDiscordUser(user);
+                    setDiscordUser(user);
                 } catch (e) {
                     console.warn('Discord SDK unavailable:', e.message);
                     user = {
@@ -127,7 +125,7 @@ export default function App() {
                         global_name: 'Выживший #' + Math.floor(Math.random() * 999),
                         avatar: null,
                     };
-                    if (!cancelled) setDiscordUser(user);
+                    setDiscordUser(user);
                 }
 
                 // Initialize Playroom
@@ -136,19 +134,16 @@ export default function App() {
 
                 setLoadingText('Готово!');
                 setTimeout(() => {
-                    if (!cancelled) {
-                        setLoading(false);
-                        setReady(true);
-                    }
+                    setLoading(false);
+                    setReady(true);
                 }, 600);
             } catch (err) {
                 console.error('Initialization error:', err);
-                if (!cancelled) setError(err.message);
+                setError(err.message);
             }
         }
 
         init();
-        return () => { cancelled = true; };
     }, []);
 
     if (error) {
