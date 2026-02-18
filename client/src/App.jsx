@@ -109,6 +109,18 @@ export default function App() {
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
+        let done = false;
+
+        // Emergency timeout — force-show game after 20s no matter what
+        const emergency = setTimeout(() => {
+            if (!done) {
+                console.warn('[App] Аварийный таймаут 20с — принудительный запуск');
+                done = true;
+                setLoading(false);
+                setReady(true);
+            }
+        }, 20000);
+
         async function init() {
             try {
                 // Try Discord auth
@@ -132,18 +144,27 @@ export default function App() {
                 setLoadingText('Подключение к комнате...');
                 await setupPlayroom(user);
 
-                setLoadingText('Готово!');
-                setTimeout(() => {
-                    setLoading(false);
-                    setReady(true);
-                }, 600);
+                if (!done) {
+                    done = true;
+                    clearTimeout(emergency);
+                    setLoadingText('Готово!');
+                    setTimeout(() => {
+                        setLoading(false);
+                        setReady(true);
+                    }, 600);
+                }
             } catch (err) {
                 console.error('Initialization error:', err);
-                setError(err.message);
+                if (!done) {
+                    done = true;
+                    clearTimeout(emergency);
+                    setError(err.message);
+                }
             }
         }
 
         init();
+        return () => clearTimeout(emergency);
     }, []);
 
     if (error) {

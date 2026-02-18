@@ -1,13 +1,19 @@
 import { insertCoin, isStreamScreen, onPlayerJoin, myPlayer } from 'playroomkit';
 
+let initialized = false;
+
 function isInsideDiscord() {
     const params = new URLSearchParams(window.location.search);
     return params.has('frame_id') || params.has('instance_id');
 }
 
 export async function setupPlayroom(discordUser) {
+    if (initialized) return;
+    initialized = true;
+
     await insertCoin({
         discord: isInsideDiscord(),
+        skipLobby: true,
         maxPlayersPerRoom: 12,
         defaultPlayerState: {
             cards: null,
@@ -40,4 +46,3 @@ export async function setupPlayroom(discordUser) {
 }
 
 export { isStreamScreen, onPlayerJoin, myPlayer };
-
