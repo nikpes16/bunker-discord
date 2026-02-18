@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { setupDiscord, getUser } from './discordSdk';
+import { setupDiscord } from './discordSdk';
 import { setupPlayroom } from './playroomSetup';
 import {
     useMultiplayerState,
@@ -13,19 +13,12 @@ import GameBoard from './components/GameBoard';
 
 // Game phases
 const PHASE = {
-    LOADING: 'loading',
     LOBBY: 'lobby',
     PLAYING: 'playing',
 };
 
-export default function App() {
-    const [loading, setLoading] = useState(true);
-    const [loadingText, setLoadingText] = useState('Инициализация...');
-    const [error, setError] = useState(null);
-    const [discordUser, setDiscordUser] = useState(null);
-    const [playroomReady, setPlayroomReady] = useState(false);
-
-    // Multiplayer state
+// Inner game component — only renders AFTER PlayroomKit is initialized
+function Game({ discordUser }) {
     const [gamePhase, setGamePhase] = useMultiplayerState('gamePhase', PHASE.LOBBY);
     const [disaster, setDisaster] = useMultiplayerState('disaster', null);
     const [bunker, setBunker] = useMultiplayerState('bunker', null);
@@ -33,49 +26,6 @@ export default function App() {
     const players = usePlayersList(true);
     const isHost = useIsHost();
     const me = myPlayer();
-
-    // Initialize Discord + Playroom
-    useEffect(() => {
-        let cancelled = false;
-
-        async function init() {
-            try {
-                // Try Discord auth (will fail outside Discord iframe — use fallback)
-                setLoadingText('Подключение к Discord...');
-                let user = null;
-                try {
-                    user = await setupDiscord();
-                    if (!cancelled) setDiscordUser(user);
-                } catch (e) {
-                    console.warn('Discord SDK unavailable (running outside Discord):', e.message);
-                    // Fallback: generate a test user
-                    user = {
-                        id: 'test_' + Math.random().toString(36).substr(2, 9),
-                        username: 'Выживший_' + Math.floor(Math.random() * 999),
-                        global_name: 'Выживший #' + Math.floor(Math.random() * 999),
-                        avatar: null,
-                    };
-                    if (!cancelled) setDiscordUser(user);
-                }
-
-                // Initialize Playroom
-                setLoadingText('Подключение к комнате...');
-                await setupPlayroom(user);
-                if (!cancelled) setPlayroomReady(true);
-
-                setLoadingText('Готово!');
-                setTimeout(() => {
-                    if (!cancelled) setLoading(false);
-                }, 600);
-            } catch (err) {
-                console.error('Initialization error:', err);
-                if (!cancelled) setError(err.message);
-            }
-        }
-
-        init();
-        return () => { cancelled = true; };
-    }, []);
 
     // Deal roles handler (host only)
     const handleDealRoles = useCallback(() => {
@@ -85,11 +35,9 @@ export default function App() {
         const disasterText = getRandomDisaster();
         const bunkerText = getRandomBunker();
 
-        // Set global state
         setDisaster(disasterText, true);
         setBunker(bunkerText, true);
 
-        // Deal cards to each player
         players.forEach((player, index) => {
             player.setState('cards', hands[index], true);
             player.setState('revealed', {
@@ -127,7 +75,81 @@ export default function App() {
         setGamePhase(PHASE.LOBBY, true);
     }, [isHost, players, setDisaster, setBunker, setGamePhase]);
 
-    // --- Render ---
+    return (
+        <div className="app-container">
+            {gamePhase === PHASE.LOBBY || gamePhase === 'lobby' ? (
+                <Lobby
+                    players={players}
+                    isHost={isHost}
+                    onDealRoles={handleDealRoles}
+                    disaster={disaster}
+                    bunker={bunker}
+                    me={me}
+                />
+            ) : (
+                <GameBoard
+                    players={players}
+                    me={me}
+                    isHost={isHost}
+                    disaster={disaster}
+                    bunker={bunker}
+                    onResetGame={handleResetGame}
+                />
+            )}
+        </div>
+    );
+}
+
+// Root app — handles initialization, shows loading/error screens
+export default function App() {
+    const [loading, setLoading] = useState(true);
+    const [loadingText, setLoadingText] = useState('Инициализация...');
+    const [error, setError] = useState(null);
+    const [discordUser, setDiscordUser] = useState(null);
+    const [ready, setReady] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function init() {
+            try {
+                // Try Discord auth
+                setLoadingText('Подключение к Discord...');
+                let user = null;
+                try {
+                    user = await setupDiscord();
+                    if (!cancelled) setDiscordUser(user);
+                } catch (e) {
+                    console.warn('Discord SDK unavailable:', e.message);
+                    user = {
+                        id: 'test_' + Math.random().toString(36).substr(2, 9),
+                        username: 'Выживший_' + Math.floor(Math.random() * 999),
+                        global_name: 'Выживший #' + Math.floor(Math.random() * 999),
+                        avatar: null,
+                    };
+                    if (!cancelled) setDiscordUser(user);
+                }
+
+                // Initialize Playroom
+                setLoadingText('Подключение к комнате...');
+                await setupPlayroom(user);
+
+                setLoadingText('Готово!');
+                setTimeout(() => {
+                    if (!cancelled) {
+                        setLoading(false);
+                        setReady(true);
+                    }
+                }, 600);
+            } catch (err) {
+                console.error('Initialization error:', err);
+                if (!cancelled) setError(err.message);
+            }
+        }
+
+        init();
+        return () => { cancelled = true; };
+    }, []);
 
     if (error) {
         return (
@@ -161,27 +183,10 @@ export default function App() {
         );
     }
 
-    return (
-        <div className="app-container">
-            {gamePhase === PHASE.LOBBY || gamePhase === 'lobby' ? (
-                <Lobby
-                    players={players}
-                    isHost={isHost}
-                    onDealRoles={handleDealRoles}
-                    disaster={disaster}
-                    bunker={bunker}
-                    me={me}
-                />
-            ) : (
-                <GameBoard
-                    players={players}
-                    me={me}
-                    isHost={isHost}
-                    disaster={disaster}
-                    bunker={bunker}
-                    onResetGame={handleResetGame}
-                />
-            )}
-        </div>
-    );
+    // Only render Game after PlayroomKit is initialized
+    if (ready) {
+        return <Game discordUser={discordUser} />;
+    }
+
+    return null;
 }

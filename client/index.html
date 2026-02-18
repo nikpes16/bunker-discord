@@ -1,16 +1,206 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>БУНКЕР — Игра на выживание</title>
-    <meta name="description" content="Бункер — многопользовательская карточная игра на выживание в Discord" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <!-- Кодировка и viewport для iframe Discord -->
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- SEO & Мета -->
+  <title>БУНКЕР — Игра на выживание</title>
+  <meta name="description"
+    content="Бункер — многопользовательская карточная игра на выживание. Discord Activity для 2–12 игроков." />
+  <meta name="author" content="Bunker Game" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="color-scheme" content="dark" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="БУНКЕР — Игра на выживание" />
+  <meta property="og:description"
+    content="Постапокалиптическая карточная игра в Discord. Получи роль, вскрой карты, выживи." />
+  <meta property="og:image" content="/og-image.png" />
+
+  <!-- Запрет масштабирования в iframe Discord -->
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☢️</text></svg>" />
+
+  <!-- Google Fonts: Orbitron (заголовки), Rajdhani (тело), Share Tech Mono (моно) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap"
+    rel="stylesheet" />
+
+  <!-- Критические стили до загрузки React -->
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #root {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: #0a0a0f;
+      color: #e8e8f0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Прелоадер — появляется мгновенно, до React */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(57, 255, 20, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(255, 102, 0, 0.03) 0%, transparent 50%),
+        linear-gradient(180deg, #0a0a0f 0%, #111118 50%, #0a0a0f 100%);
+      transition: opacity 0.5s ease;
+    }
+
+    #preloader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #preloader .symbol {
+      font-size: 64px;
+      color: #39ff14;
+      text-shadow: 0 0 30px rgba(57, 255, 20, 0.4), 0 0 60px rgba(57, 255, 20, 0.2);
+      animation: preloader-pulse 2s ease-in-out infinite;
+    }
+
+    #preloader .title {
+      font-family: 'Orbitron', monospace, sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 8px;
+      color: #39ff14;
+      text-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+      margin-top: 16px;
+    }
+
+    #preloader .subtitle {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: #9999aa;
+      letter-spacing: 2px;
+      margin-top: 8px;
+    }
+
+    #preloader .bar {
+      width: 200px;
+      height: 2px;
+      background: #2a2a35;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+
+    #preloader .bar-fill {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, #1a7a0a, #39ff14);
+      box-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+      animation: preloader-bar 2s ease-in-out infinite;
+    }
+
+    @keyframes preloader-pulse {
+
+      0%,
+      100% {
+        opacity: 0.6;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes preloader-bar {
+      0% {
+        width: 10%;
+        margin-left: 0;
+      }
+
+      50% {
+        width: 50%;
+      }
+
+      100% {
+        width: 10%;
+        margin-left: 90%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Прелоадер — виден до загрузки JS-бандла и React -->
+  <div id="preloader">
+    <div class="symbol">☢</div>
+    <div class="title">БУНКЕР</div>
+    <div class="subtitle">ЗАГРУЗКА СИСТЕМ...</div>
+    <div class="bar">
+      <div class="bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- React монтируется сюда -->
+  <div id="root"></div>
+
+  <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Скрываем прелоадер после загрузки React -->
+  <script>
+    window.addEventListener('load', () => {
+      const preloader = document.getElementById('preloader');
+      if (preloader) {
+        setTimeout(() => {
+          preloader.classList.add('hidden');
+          setTimeout(() => preloader.remove(), 500);
+        }, 400);
+      }
+    });
+  </script>
+
+  <!-- noscript фоллбэк -->
+  <noscript>
+    <div
+      style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0f;color:#ff6600;font-family:monospace;text-align:center;padding:24px;">
+      <div>
+        <p style="font-size:48px;margin-bottom:16px;">☢️</p>
+        <h1 style="font-size:20px;letter-spacing:4px;margin-bottom:8px;">БУНКЕР</h1>
+        <p style="font-size:14px;color:#9999aa;">Для работы игры необходим JavaScript.</p>
+      </div>
+    </div>
+  </noscript>
+</body>
+
 </html>

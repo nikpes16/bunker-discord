@@ -1,11 +1,22 @@
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 
-const discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
-
+let discordSdk = null;
 let auth = null;
 let currentUser = null;
 
+function isInsideDiscord() {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('frame_id') || params.has('instance_id');
+}
+
 export async function setupDiscord() {
+    if (!isInsideDiscord()) {
+        throw new Error('Not inside Discord iframe');
+    }
+
+    // Lazy-init SDK only inside Discord
+    discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
+
     await discordSdk.ready();
 
     // Authorize
@@ -50,4 +61,6 @@ export function getAuth() {
     return auth;
 }
 
-export { discordSdk };
+export function getDiscordSdk() {
+    return discordSdk;
+}
