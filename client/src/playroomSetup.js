@@ -2,12 +2,11 @@ import { insertCoin, isStreamScreen, onPlayerJoin, myPlayer } from 'playroomkit'
 
 let initialized = false;
 
-export async function setupPlayroom(discordUser, isDiscord = false) {
+export async function setupPlayroom(discordUser) {
     if (initialized) return;
     initialized = true;
 
     await insertCoin({
-        discord: isDiscord,
         skipLobby: true,
         maxPlayersPerRoom: 12,
         defaultPlayerState: {

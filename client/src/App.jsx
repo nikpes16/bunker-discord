@@ -143,7 +143,7 @@ export default function App() {
 
                 // Initialize Playroom
                 setLoadingText('Подключение к комнате...');
-                await setupPlayroom(user, isDiscord);
+                await setupPlayroom(user);
 
                 if (!done) {
                     done = true;
