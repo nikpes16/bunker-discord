@@ -11,7 +11,6 @@ import {
 import { dealCards, getRandomDisaster, getRandomBunker, CARD_TYPES } from './gameData';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
-import { DebugLog, addLog } from './DebugLog';
 
 // Game phases
 const PHASE = {
