@@ -8,6 +8,7 @@ export async function setupPlayroom(discordUser, isDiscord = false) {
 
     await insertCoin({
         discord: isDiscord,
+        skipLobby: true,
         maxPlayersPerRoom: 12,
         defaultPlayerState: {
             cards: null,
