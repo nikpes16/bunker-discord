@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { setupDiscord } from './discordSdk';
 import { DebugLog, addLog } from './DebugLog';
+
+// Global error handlers
+window.onerror = function (msg, url, line, col, error) {
+    addLog(`[GLOBAL ERROR] ${msg} at ${line}:${col}`);
+    return false;
+};
+
+window.onunhandledrejection = function (event) {
+    addLog(`[UNHANDLED PROMISE] ${event.reason}`);
+};
+
 import { setupPlayroom } from './playroomSetup';
 import {
     useMultiplayerState,
