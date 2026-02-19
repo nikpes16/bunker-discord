@@ -1,4 +1,5 @@
 import { DiscordSDK } from '@discord/embedded-app-sdk';
+import { addLog } from './DebugLog';
 
 let discordSdk = null;
 let auth = null;
@@ -24,7 +25,7 @@ export async function setupDiscord() {
     }
 
     const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
-    console.log('[Discord] Client ID:', clientId ? '✓ задан' : '✗ ОТСУТСТВУЕТ');
+    addLog(`[Discord] Client ID: ${clientId ? '✓ задан' : '✗ ОТСУТСТВУЕТ'}`);
 
     if (!clientId) {
         throw new Error('VITE_DISCORD_CLIENT_ID не задан');
@@ -32,12 +33,12 @@ export async function setupDiscord() {
 
     discordSdk = new DiscordSDK(clientId);
 
-    console.log('[Discord] Ожидание ready()...');
+    addLog('[Discord] Ожидание ready()...');
     await withTimeout(discordSdk.ready(), 10000, 'discordSdk.ready()');
-    console.log('[Discord] ready() ✓');
+    addLog('[Discord] ready() ✓');
 
     // Authorize
-    console.log('[Discord] Авторизация...');
+    addLog('[Discord] Авторизация...');
     const { code } = await withTimeout(
         discordSdk.commands.authorize({
             client_id: clientId,
@@ -49,10 +50,10 @@ export async function setupDiscord() {
         15000,
         'authorize'
     );
-    console.log('[Discord] authorize() ✓');
+    addLog('[Discord] authorize() ✓');
 
     // Exchange code for access_token
-    console.log('[Discord] Обмен токена...');
+    addLog('[Discord] Обмен токена...');
     const response = await withTimeout(
         fetch('/api/token', {
             method: 'POST',
@@ -64,14 +65,14 @@ export async function setupDiscord() {
     );
 
     const { access_token } = await response.json();
-    console.log('[Discord] Токен получен:', access_token ? '✓' : '✗ ПУСТО');
+    addLog(`[Discord] Токен получен: ${access_token ? '✓' : '✗ ПУСТО'}`);
 
     if (!access_token) {
         throw new Error('access_token не получен от /api/token');
     }
 
     // Authenticate with Discord
-    console.log('[Discord] Аутентификация...');
+    addLog('[Discord] Аутентификация...');
     auth = await withTimeout(
         discordSdk.commands.authenticate({ access_token }),
         10000,
@@ -81,16 +82,16 @@ export async function setupDiscord() {
     if (!auth) {
         throw new Error('Authentication failed');
     }
-    console.log('[Discord] authenticate() ✓');
+    addLog('[Discord] authenticate() ✓');
 
     // Fetch user info
-    console.log('[Discord] Загрузка профиля...');
+    addLog('[Discord] Загрузка профиля...');
     const userResponse = await fetch('https://discord.com/api/users/@me', {
         headers: { Authorization: `Bearer ${access_token}` },
     });
 
     currentUser = await userResponse.json();
-    console.log('[Discord] Пользователь:', currentUser.username, '✓');
+    addLog(`[Discord] Пользователь: ${currentUser.username} ✓`);
     return currentUser;
 }
 

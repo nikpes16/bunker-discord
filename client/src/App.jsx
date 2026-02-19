@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { setupDiscord } from './discordSdk';
+import { DebugLog, addLog } from './DebugLog';
 import { setupPlayroom } from './playroomSetup';
 import {
     useMultiplayerState,
@@ -10,6 +11,7 @@ import {
 import { dealCards, getRandomDisaster, getRandomBunker, CARD_TYPES } from './gameData';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
+import { DebugLog, addLog } from './DebugLog';
 
 // Game phases
 const PHASE = {
@@ -100,6 +102,7 @@ function Game({ discordUser }) {
     );
 }
 
+
 // Root app — handles initialization, shows loading/error screens
 export default function App() {
     const [loading, setLoading] = useState(true);
@@ -109,12 +112,14 @@ export default function App() {
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
+        addLog('--- APP STARTED (v3-debug) ---');
         let done = false;
 
         // Emergency timeout — force-show game after 20s no matter what
         const emergency = setTimeout(() => {
             if (!done) {
                 console.warn('[App] Аварийный таймаут 20с — принудительный запуск');
+                addLog('[App] ⚠️ АВАРИЙНЫЙ ТАЙМАУТ 20с');
                 done = true;
                 setLoading(false);
                 setReady(true);
@@ -202,8 +207,13 @@ export default function App() {
 
     // Only render Game after PlayroomKit is initialized
     if (ready) {
-        return <Game discordUser={discordUser} />;
+        return (
+            <>
+                <DebugLog />
+                <Game discordUser={discordUser} />
+            </>
+        );
     }
 
-    return null;
+    return <DebugLog />;
 }
