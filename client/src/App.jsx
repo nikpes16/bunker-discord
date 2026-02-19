@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { setupDiscord } from './discordSdk';
 import { setupPlayroom } from './playroomSetup';
 import {
     useMultiplayerState,
@@ -9,11 +10,6 @@ import {
 import { dealCards, getRandomDisaster, getRandomBunker, CARD_TYPES } from './gameData';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
-
-function isInsideDiscord() {
-    const params = new URLSearchParams(window.location.search);
-    return params.has('frame_id') || params.has('instance_id');
-}
 
 // Game phases
 const PHASE = {
@@ -127,16 +123,15 @@ export default function App() {
 
         async function init() {
             try {
-                const inDiscord = isInsideDiscord();
-
+                setLoadingText('Подключение к Discord...');
                 let user = null;
-                if (inDiscord) {
-                    // Inside Discord — PlayroomKit handles SDK auth via insertCoin
-                    setLoadingText('Подключение к Discord...');
-                    console.log('[App] Внутри Discord iframe — PlayroomKit управляет SDK');
-                } else {
-                    // Outside Discord — create mock user
-                    console.log('[App] Вне Discord — мок-пользователь');
+                let isDiscord = false;
+                try {
+                    user = await setupDiscord();
+                    setDiscordUser(user);
+                    isDiscord = true;
+                } catch (e) {
+                    console.warn('Discord SDK unavailable:', e.message);
                     user = {
                         id: 'test_' + Math.random().toString(36).substr(2, 9),
                         username: 'Выживший_' + Math.floor(Math.random() * 999),
@@ -146,9 +141,9 @@ export default function App() {
                     setDiscordUser(user);
                 }
 
-                // Initialize Playroom (handles Discord SDK when inDiscord=true)
+                // Initialize Playroom
                 setLoadingText('Подключение к комнате...');
-                await setupPlayroom(user, inDiscord);
+                await setupPlayroom(user, isDiscord);
 
                 if (!done) {
                     done = true;
