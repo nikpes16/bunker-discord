@@ -1,7 +1,11 @@
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 import { addLog } from './DebugLog';
 
+const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
 let discordSdk = null;
+if (clientId) {
+    discordSdk = new DiscordSDK(clientId);
+}
 let auth = null;
 let currentUser = null;
 
@@ -31,7 +35,7 @@ export async function setupDiscord() {
         throw new Error('VITE_DISCORD_CLIENT_ID не задан');
     }
 
-    discordSdk = new DiscordSDK(clientId);
+    // discordSdk already created at top level
 
     addLog('[Discord] Ожидание ready()...');
     await withTimeout(discordSdk.ready(), 10000, 'discordSdk.ready()');
