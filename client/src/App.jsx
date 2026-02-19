@@ -126,9 +126,11 @@ export default function App() {
                 // Try Discord auth
                 setLoadingText('Подключение к Discord...');
                 let user = null;
+                let isDiscord = false;
                 try {
                     user = await setupDiscord();
                     setDiscordUser(user);
+                    isDiscord = true;
                 } catch (e) {
                     console.warn('Discord SDK unavailable:', e.message);
                     user = {
@@ -142,7 +144,7 @@ export default function App() {
 
                 // Initialize Playroom
                 setLoadingText('Подключение к комнате...');
-                await setupPlayroom(user);
+                await setupPlayroom(user, isDiscord);
 
                 if (!done) {
                     done = true;
